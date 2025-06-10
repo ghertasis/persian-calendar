@@ -13,7 +13,6 @@
     "react-dom": "^18",
     "next": "14.2.15",
     "@supabase/supabase-js": "^2.39.0",
-    "@supabase/ssr": "^0.5.1",
     "google-auth-library": "^9.6.3",
     "googleapis": "^134.0.0",
     "moment-jalaali": "^0.10.0",
