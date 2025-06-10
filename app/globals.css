@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  direction: rtl;
+}
+
+.ltr {
+  direction: ltr;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.persian-number {
+  font-family: 'IRANSans', 'Tahoma', sans-serif;
+}
