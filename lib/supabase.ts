@@ -21,6 +21,12 @@ export function createSupabaseClient() {
   return supabase
 }
 
-export function createServerSupabaseClient() {
+// Server client function (same as main client for now)
+export function createServerClient() {
   return supabase
+}
+
+// Service client function 
+export function createServiceClient() {
+  return supabaseAdmin
 }

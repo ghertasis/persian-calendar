@@ -1,134 +1,108 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { getGoogleEvents } from '@/lib/google-calendar'
 
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const startDate = searchParams.get('start')
+  const endDate = searchParams.get('end')
+
   try {
-    const { searchParams } = new URL(request.url)
-    const startDate = searchParams.get('start')
-    const endDate = searchParams.get('end')
-    
-    if (!startDate || !endDate) {
-      return NextResponse.json(
-        { error: 'Start and end dates are required' },
-        { status: 400 }
-      )
-    }
-    
-    const supabase = createServerClient()
+    // Get current user session
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
-    // Get user data
-    const { data: user } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', session.user.id)
-      .single()
-    
-    // Get local events
-    const { data: localEvents } = await supabase
+
+    // Fetch local events from Supabase
+    let query = supabase
       .from('events')
       .select('*')
       .eq('user_id', session.user.id)
-      .gte('start_date', startDate)
-      .lte('end_date', endDate)
-    
+
+    if (startDate && endDate) {
+      query = query
+        .gte('start', startDate)
+        .lte('end', endDate)
+    }
+
+    const { data: localEvents, error: localError } = await query
+
+    if (localError) {
+      console.error('Error fetching local events:', localError)
+      return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 })
+    }
+
+    // Get user's Google tokens
+    const { data: userData } = await supabase
+      .from('users')
+      .select('google_access_token, google_refresh_token')
+      .eq('id', session.user.id)
+      .single()
+
     let googleEvents: any[] = []
-    
-    // Get Google events if connected
-    if (user?.google_access_token && user?.default_calendar_id) {
+
+    // Fetch Google events if tokens exist
+    if (userData?.google_access_token && startDate && endDate) {
       try {
         googleEvents = await getGoogleEvents(
-          user.google_access_token,
-          user.default_calendar_id,
-          new Date(startDate),
-          new Date(endDate),
-          user.google_refresh_token
+          userData.google_access_token,
+          userData.google_refresh_token,
+          startDate,
+          endDate
         )
       } catch (error) {
         console.error('Error fetching Google events:', error)
+        // Continue without Google events
       }
     }
-    
+
     // Combine and format events
     const allEvents = [
-      ...(localEvents || []).map(event => ({
-        id: event.id,
-        title: event.title,
-        description: event.description,
-        start: event.start_date,
-        end: event.end_date,
-        shamsiDate: event.shamsi_date,
-        isAllDay: event.is_all_day,
-        color: event.color,
+      ...localEvents.map(event => ({
+        ...event,
         source: 'local'
       })),
       ...googleEvents.map(event => ({
-        id: `google_${event.id}`,
-        title: event.summary,
-        description: event.description,
-        start: event.start.dateTime || event.start.date,
-        end: event.end.dateTime || event.end.date,
-        isAllDay: !event.start.dateTime,
-        color: event.colorId ? `#${event.colorId}` : '#3B82F6',
+        ...event,
         source: 'google'
       }))
     ]
-    
+
     return NextResponse.json({ events: allEvents })
-    
   } catch (error) {
-    console.error('Events API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch events' },
-      { status: 500 }
-    )
+    console.error('Error in events API:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, start, end, isAllDay, color, shamsiDate } = body
-    
-    const supabase = createServerClient()
     const { data: { session } } = await supabase.auth.getSession()
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
-    // Create local event
+
     const { data: event, error } = await supabase
       .from('events')
       .insert({
-        user_id: session.user.id,
-        title,
-        description,
-        start_date: start,
-        end_date: end,
-        is_all_day: isAllDay,
-        color: color || '#3B82F6',
-        shamsi_date: shamsiDate
+        ...body,
+        user_id: session.user.id
       })
       .select()
       .single()
-    
+
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      console.error('Error creating event:', error)
+      return NextResponse.json({ error: 'Failed to create event' }, { status: 500 })
     }
-    
+
     return NextResponse.json({ event })
-    
   } catch (error) {
-    console.error('Create event error:', error)
-    return NextResponse.json(
-      { error: 'Failed to create event' },
-      { status: 500 }
-    )
+    console.error('Error in POST events API:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
