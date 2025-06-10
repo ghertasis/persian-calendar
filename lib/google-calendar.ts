@@ -1,10 +1,12 @@
+import { GoogleAuth, OAuth2Client } from 'google-auth-library'
 import { google } from 'googleapis'
-import { OAuth2Client } from 'google-auth-library'
 
+// Environment variables
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!
 const REDIRECT_URI = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callback`
 
+// Types
 export interface GoogleEvent {
   id: string
   summary: string
@@ -36,7 +38,7 @@ export function createGoogleAuth(): OAuth2Client {
   )
 }
 
-// Get authorization URL
+// Generate Google authorization URL
 export function getGoogleAuthUrl(): string {
   const oauth2Client = createGoogleAuth()
   
@@ -54,16 +56,23 @@ export function getGoogleAuthUrl(): string {
   })
 }
 
-// Exchange code for tokens
+// Exchange authorization code for tokens
 export async function getGoogleTokens(code: string) {
   const oauth2Client = createGoogleAuth()
-  const { tokens } = await oauth2Client.getAccessToken(code)
-  return tokens
+  
+  try {
+    const { tokens } = await oauth2Client.getToken(code)
+    return tokens
+  } catch (error) {
+    console.error('Error getting Google tokens:', error)
+    throw error
+  }
 }
 
 // Create authenticated calendar client
-export function createCalendarClient(accessToken: string, refreshToken?: string): any {
+export function createCalendarClient(accessToken: string, refreshToken?: string) {
   const oauth2Client = createGoogleAuth()
+  
   oauth2Client.setCredentials({
     access_token: accessToken,
     refresh_token: refreshToken
@@ -72,25 +81,26 @@ export function createCalendarClient(accessToken: string, refreshToken?: string)
   return google.calendar({ version: 'v3', auth: oauth2Client })
 }
 
-// Get user's calendars
+// Get user's Google Calendars
 export async function getUserCalendars(accessToken: string, refreshToken?: string): Promise<GoogleCalendar[]> {
   try {
     const calendar = createCalendarClient(accessToken, refreshToken)
+    
     const response = await calendar.calendarList.list()
     
-    return response.data.items?.map((cal: any) => ({
-      id: cal.id,
-      summary: cal.summary,
-      primary: cal.primary,
-      backgroundColor: cal.backgroundColor
+    return response.data.items?.map(item => ({
+      id: item.id!,
+      summary: item.summary!,
+      primary: item.primary,
+      backgroundColor: item.backgroundColor
     })) || []
   } catch (error) {
-    console.error('Error fetching calendars:', error)
-    throw new Error('Failed to fetch calendars')
+    console.error('Error fetching Google calendars:', error)
+    throw error
   }
 }
 
-// Get events from Google Calendar
+// Get Google Calendar events
 export async function getGoogleEvents(
   accessToken: string,
   calendarId: string,
@@ -106,109 +116,82 @@ export async function getGoogleEvents(
       timeMin: startDate.toISOString(),
       timeMax: endDate.toISOString(),
       singleEvents: true,
-      orderBy: 'startTime',
-      maxResults: 250
+      orderBy: 'startTime'
     })
     
-    return response.data.items?.map((event: any) => ({
-      id: event.id,
-      summary: event.summary || 'بدون عنوان',
-      description: event.description,
-      start: event.start,
-      end: event.end,
-      colorId: event.colorId
+    return response.data.items?.map(item => ({
+      id: item.id!,
+      summary: item.summary || 'Untitled Event',
+      description: item.description,
+      start: {
+        dateTime: item.start?.dateTime,
+        date: item.start?.date
+      },
+      end: {
+        dateTime: item.end?.dateTime,
+        date: item.end?.date
+      },
+      colorId: item.colorId
     })) || []
   } catch (error) {
-    console.error('Error fetching events:', error)
-    throw new Error('Failed to fetch events')
+    console.error('Error fetching Google events:', error)
+    throw error
   }
 }
 
-// Create event in Google Calendar
+// Create Google Calendar event
 export async function createGoogleEvent(
   accessToken: string,
   calendarId: string,
-  eventData: {
-    summary: string
-    description?: string
-    start: Date
-    end: Date
-    isAllDay?: boolean
-  },
+  eventData: any,
   refreshToken?: string
-): Promise<string> {
+) {
   try {
     const calendar = createCalendarClient(accessToken, refreshToken)
     
-    const event = {
-      summary: eventData.summary,
-      description: eventData.description,
-      start: eventData.isAllDay ? 
-        { date: eventData.start.toISOString().split('T')[0] } :
-        { dateTime: eventData.start.toISOString() },
-      end: eventData.isAllDay ?
-        { date: eventData.end.toISOString().split('T')[0] } :
-        { dateTime: eventData.end.toISOString() }
-    }
-    
     const response = await calendar.events.insert({
       calendarId,
-      resource: event
+      requestBody: eventData
     })
     
-    return response.data.id!
+    return response.data
   } catch (error) {
-    console.error('Error creating event:', error)
-    throw new Error('Failed to create event')
+    console.error('Error creating Google event:', error)
+    throw error
   }
 }
 
-// Update event in Google Calendar
+// Update Google Calendar event
 export async function updateGoogleEvent(
   accessToken: string,
   calendarId: string,
   eventId: string,
-  eventData: {
-    summary: string
-    description?: string
-    start: Date
-    end: Date
-    isAllDay?: boolean
-  },
+  eventData: any,
   refreshToken?: string
-): Promise<void> {
+) {
   try {
     const calendar = createCalendarClient(accessToken, refreshToken)
     
-    const event = {
-      summary: eventData.summary,
-      description: eventData.description,
-      start: eventData.isAllDay ? 
-        { date: eventData.start.toISOString().split('T')[0] } :
-        { dateTime: eventData.start.toISOString() },
-      end: eventData.isAllDay ?
-        { date: eventData.end.toISOString().split('T')[0] } :
-        { dateTime: eventData.end.toISOString() }
-    }
-    
-    await calendar.events.update({
+    const response = await calendar.events.update({
       calendarId,
       eventId,
-      resource: event
+      requestBody: eventData
     })
+    
+    return response.data
   } catch (error) {
-    console.error('Error updating event:', error)
-    throw new Error('Failed to update event')
+    console.error('Error updating Google event:', error)
+    throw error
   }
 }
 
-// Delete event from Google Calendar
+// Delete Google Calendar event
 export async function deleteGoogleEvent(
   accessToken: string,
   calendarId: string,
   eventId: string,
   refreshToken?: string
-): Promise<void> {
+) {
   try {
     const calendar = createCalendarClient(accessToken, refreshToken)
     
@@ -216,22 +199,26 @@ export async function deleteGoogleEvent(
       calendarId,
       eventId
     })
+    
+    return true
   } catch (error) {
-    console.error('Error deleting event:', error)
-    throw new Error('Failed to delete event')
+    console.error('Error deleting Google event:', error)
+    throw error
   }
 }
 
-// Refresh access token
+// Refresh Google access token
 export async function refreshGoogleToken(refreshToken: string) {
   try {
     const oauth2Client = createGoogleAuth()
-    oauth2Client.setCredentials({ refresh_token: refreshToken })
+    oauth2Client.setCredentials({
+      refresh_token: refreshToken
+    })
     
     const { credentials } = await oauth2Client.refreshAccessToken()
     return credentials
   } catch (error) {
-    console.error('Error refreshing token:', error)
-    throw new Error('Failed to refresh token')
+    console.error('Error refreshing Google token:', error)
+    throw error
   }
 }
