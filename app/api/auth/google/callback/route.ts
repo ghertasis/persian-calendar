@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getGoogleTokens } from '@/lib/google-calendar'
 import { supabase } from '@/lib/supabase'
-import { google } from 'googleapis'
+import { OAuth2Client } from 'google-auth-library'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -21,10 +21,21 @@ export async function GET(request: NextRequest) {
     const tokens = await getGoogleTokens(code)
     
     // Get user info from Google
-    const oauth2 = google.oauth2({ version: 'v2' })
-    oauth2.setCredentials(tokens)
+    const oauth2Client = new OAuth2Client(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET
+    )
     
-    const { data: userInfo } = await oauth2.userinfo.get()
+    oauth2Client.setCredentials(tokens)
+    
+    // Fetch user info
+    const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: {
+        'Authorization': `Bearer ${tokens.access_token}`
+      }
+    })
+    
+    const userInfo = await response.json()
 
     // Get current user session
     const { data: { session } } = await supabase.auth.getSession()
