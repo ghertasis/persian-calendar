@@ -3,30 +3,29 @@ import type { Database } from '@/types/database'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Main Supabase client
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
-
-// Service role client for admin operations
-export const supabaseAdmin = createClient<Database>(supabaseUrl, supabaseServiceKey, {
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
+    persistSession: true,
+    autoRefreshToken: true,
+  },
 })
 
-// Function to create client (for consistency with other files)
-export function createSupabaseClient() {
-  return supabase
+// Helper function for authenticated requests
+export const getAuthenticatedSupabase = (accessToken: string) => {
+  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+    auth: {
+      persistSession: false,
+    },
+  })
 }
 
-// Server client function (same as main client for now)
-export function createServerClient() {
-  return supabase
-}
-
-// Service client function 
-export function createServiceClient() {
-  return supabaseAdmin
-}
+// Type exports for convenience
+export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
+export type InsertTables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
+export type UpdateTables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']
