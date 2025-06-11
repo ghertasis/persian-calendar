@@ -1,77 +1,55 @@
 declare module 'moment-jalaali' {
-  import { Moment, MomentInput, unitOfTime } from 'moment'
+  import { Moment, MomentFormatSpecification, MomentInput } from 'moment';
 
-  interface MomentJalaali extends Moment {
-    jYear(): number
-    jYear(year: number): MomentJalaali
-    jMonth(): number
-    jMonth(month: number): MomentJalaali
-    jDate(): number
-    jDate(date: number): MomentJalaali
-    jDayOfYear(): number
-    jDayOfYear(dayOfYear: number): MomentJalaali
-    jWeek(): number
-    jWeek(week: number): MomentJalaali
-    jWeekYear(): number
-    jWeekYear(weekYear: number): MomentJalaali
-    jISOWeek(): number
-    jISOWeek(isoWeek: number): MomentJalaali
-    jISOWeekYear(): number
-    jISOWeekYear(isoWeekYear: number): MomentJalaali
-    clone(): MomentJalaali
-    format(format?: string): string
-    jFormat(format?: string): string
-    startOf(unitOfTime: unitOfTime.StartOf): MomentJalaali
-    endOf(unitOfTime: unitOfTime.StartOf): MomentJalaali
-    add(amount?: MomentInput, unit?: unitOfTime.DurationConstructor): MomentJalaali
-    subtract(amount?: MomentInput, unit?: unitOfTime.DurationConstructor): MomentJalaali
-    toDate(): Date
-    valueOf(): number
-    unix(): number
-    diff(b: MomentInput, unitOfTime?: unitOfTime.Diff, precise?: boolean): number
-    isBefore(inp?: MomentInput, granularity?: unitOfTime.StartOf): boolean
-    isAfter(inp?: MomentInput, granularity?: unitOfTime.StartOf): boolean
-    isSame(inp?: MomentInput, granularity?: unitOfTime.StartOf): boolean
-    isSameOrBefore(inp?: MomentInput, granularity?: unitOfTime.StartOf): boolean
-    isSameOrAfter(inp?: MomentInput, granularity?: unitOfTime.StartOf): boolean
-    isBetween(a: MomentInput, b: MomentInput, granularity?: unitOfTime.StartOf, inclusivity?: string): boolean
-    isValid(): boolean
+  interface JMoment extends Moment {
+    jYear(): number;
+    jYear(year: number): JMoment;
+    jMonth(): number;
+    jMonth(month: number): JMoment;
+    jDate(): number;
+    jDate(date: number): JMoment;
+    jDay(): number;
+    jDayOfYear(): number;
+    jWeek(): number;
+    jWeekYear(): number;
+    
+    // متدهای startOf و endOf برای تاریخ‌های جلالی
+    startOf(unit: 'jYear' | 'jMonth' | 'jWeek' | 'jDay' | string): JMoment;
+    endOf(unit: 'jYear' | 'jMonth' | 'jWeek' | 'jDay' | string): JMoment;
+    
+    // متدهای add و subtract
+    add(amount: number, unit: 'jYear' | 'jMonth' | 'jWeek' | 'jDay' | string): JMoment;
+    subtract(amount: number, unit: 'jYear' | 'jMonth' | 'jWeek' | 'jDay' | string): JMoment;
+    
+    // فرمت‌های جلالی
+    format(format?: string): string;
+    jFormat(format?: string): string;
+    
+    // clone method
+    clone(): JMoment;
+    
+    // سایر متدها
+    isSame(date: JMoment | Moment, unit?: string): boolean;
+    isSameOrBefore(date: JMoment | Moment, unit?: string): boolean;
+    isSameOrAfter(date: JMoment | Moment, unit?: string): boolean;
+    isBefore(date: JMoment | Moment, unit?: string): boolean;
+    isAfter(date: JMoment | Moment, unit?: string): boolean;
   }
 
-  interface MomentJalaaliStatic {
-    (): MomentJalaali
-    (inp?: MomentInput): MomentJalaali
-    (inp?: MomentInput, format?: string, strict?: boolean): MomentJalaali
-    (inp?: MomentInput, format?: string, language?: string, strict?: boolean): MomentJalaali
-    (inp?: MomentInput, formats?: string[], strict?: boolean): MomentJalaali
-    (inp?: MomentInput, formats?: string[], language?: string, strict?: boolean): MomentJalaali
+  interface MomentJalaali {
+    (): JMoment;
+    (date: MomentInput): JMoment;
+    (date: MomentInput, format: MomentFormatSpecification): JMoment;
+    (date: MomentInput, format: MomentFormatSpecification, locale: string): JMoment;
+    (date: MomentInput, format: MomentFormatSpecification, strict: boolean): JMoment;
+    (date: MomentInput, format: MomentFormatSpecification, locale: string, strict: boolean): JMoment;
     
-    utc(): MomentJalaali
-    utc(inp?: MomentInput): MomentJalaali
-    utc(inp?: MomentInput, format?: string, strict?: boolean): MomentJalaali
-    utc(inp?: MomentInput, format?: string, language?: string, strict?: boolean): MomentJalaali
-    utc(inp?: MomentInput, formats?: string[], strict?: boolean): MomentJalaali
-    utc(inp?: MomentInput, formats?: string[], language?: string, strict?: boolean): MomentJalaali
-    
-    unix(timestamp: number): MomentJalaali
-    invalid(flags?: any): MomentJalaali
-    isMoment(m: any): m is MomentJalaali
-    isDate(m: any): m is Date
-    isDuration(d: any): boolean
-    
-    // Jalaali specific methods
-    loadPersian(config?: { 
-      dialect?: 'persian-modern' | 'persian-default'
-      usePersianDigits?: boolean 
-    }): void
-    jIsLeapYear(year: number): boolean
-    jDaysInMonth(year: number, month: number): number
-    jConvert: {
-      j_to_g(jy: number, jm: number, jd: number): { gy: number, gm: number, gd: number }
-      g_to_j(gy: number, gm: number, gd: number): { jy: number, jm: number, jd: number }
-    }
+    loadPersian(options?: any): void;
+    unix(timestamp: number): JMoment;
+    utc(): JMoment;
+    utc(date: MomentInput): JMoment;
   }
 
-  const moment: MomentJalaaliStatic
-  export = moment
+  const moment: MomentJalaali;
+  export = moment;
 }

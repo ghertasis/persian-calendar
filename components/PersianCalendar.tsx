@@ -7,7 +7,7 @@ import moment from 'moment-jalaali'
 moment.loadPersian({ usePersianDigits: true, dialect: 'persian-modern' })
 
 interface CalendarDay {
-  date: moment.Moment
+  date: any // استفاده از any برای moment-jalaali
   isCurrentMonth: boolean
   isToday: boolean
   isSelected: boolean
@@ -15,7 +15,7 @@ interface CalendarDay {
 
 export default function PersianCalendar() {
   const [currentDate, setCurrentDate] = useState(moment())
-  const [selectedDate, setSelectedDate] = useState<moment.Moment | null>(null)
+  const [selectedDate, setSelectedDate] = useState<any | null>(null)
   const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([])
 
   // نام ماه‌های فارسی
@@ -33,8 +33,8 @@ export default function PersianCalendar() {
   }, [currentDate])
 
   const generateCalendarDays = () => {
-    const startOfMonth = currentDate.clone().startOf('jMonth')
-    const endOfMonth = currentDate.clone().endOf('jMonth')
+    const startOfMonth = (currentDate as any).clone().startOf('jMonth')
+    const endOfMonth = (currentDate as any).clone().endOf('jMonth')
     
     // پیدا کردن اولین شنبه قبل از شروع ماه
     const startCalendar = startOfMonth.clone()
@@ -55,7 +55,7 @@ export default function PersianCalendar() {
     while (current.isSameOrBefore(endCalendar)) {
       days.push({
         date: current.clone(),
-        isCurrentMonth: current.jMonth() === currentDate.jMonth(),
+        isCurrentMonth: current.jMonth() === (currentDate as any).jMonth(),
         isToday: current.isSame(today, 'day'),
         isSelected: selectedDate ? current.isSame(selectedDate, 'day') : false
       })
@@ -66,16 +66,17 @@ export default function PersianCalendar() {
   }
 
   const goToPreviousMonth = () => {
-    setCurrentDate(prev => prev.clone().subtract(1, 'jMonth'))
+    setCurrentDate(prev => (prev as any).clone().subtract(1, 'jMonth'))
   }
 
   const goToNextMonth = () => {
-    setCurrentDate(prev => prev.clone().add(1, 'jMonth'))
+    setCurrentDate(prev => (prev as any).clone().add(1, 'jMonth'))
   }
 
   const goToToday = () => {
-    setCurrentDate(moment())
-    setSelectedDate(moment())
+    const today = moment()
+    setCurrentDate(today)
+    setSelectedDate(today)
   }
 
   const handleDayClick = (day: CalendarDay) => {
@@ -91,7 +92,7 @@ export default function PersianCalendar() {
         </button>
         
         <div className="month-year">
-          <h2>{persianMonths[currentDate.jMonth()]} {currentDate.jYear()}</h2>
+          <h2>{persianMonths[(currentDate as any).jMonth()]} {(currentDate as any).jYear()}</h2>
           <p className="gregorian-date">
             {currentDate.format('MMMM YYYY')}
           </p>
@@ -131,7 +132,7 @@ export default function PersianCalendar() {
             onClick={() => handleDayClick(day)}
           >
             <span className="persian-date">
-              {day.date.format('jD')}
+              {day.date.jFormat('jD')}
             </span>
             <span className="gregorian-date">
               {day.date.format('D')}
@@ -145,7 +146,7 @@ export default function PersianCalendar() {
         <div className="selected-date-info">
           <h3>تاریخ انتخاب شده:</h3>
           <p className="persian">
-            {selectedDate.format('dddd، jD jMMMM jYYYY')}
+            {selectedDate.jFormat('dddd، jD jMMMM jYYYY')}
           </p>
           <p className="gregorian">
             {selectedDate.format('dddd, MMMM D, YYYY')}
