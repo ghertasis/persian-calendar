@@ -1,9 +1,8 @@
 import './globals.css'
-import type { Metadata } from 'next'
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'تقویم فارسی هیبرید',
-  description: 'تقویم فارسی با قابلیت همگام‌سازی با Google Calendar',
+  description: 'تقویم فارسی با قابلیت اتصال به Google Calendar',
 }
 
 export default function RootLayout({
