@@ -127,8 +127,10 @@ const PersianCalendar = () => {
     const firstDayGregorian = persianToGregorian(year, month + 1, 1)
     const dayOfWeek = firstDayGregorian.getDay()
     
-    // تبدیل: یکشنبه=0 -> شنبه=0
-    return dayOfWeek === 6 ? 0 : dayOfWeek + 1
+    // 🔧 مشکل اینجا بود! تبدیل درست:
+    // JavaScript: یکشنبه=0, دوشنبه=1, ..., شنبه=6
+    // Persian Calendar: شنبه=0, یکشنبه=1, ..., جمعه=6
+    return (dayOfWeek + 1) % 7
   }
 
   // تولید روزهای ماه
