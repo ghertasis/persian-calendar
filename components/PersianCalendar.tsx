@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import moment from 'moment-jalaali'
 
 const PersianCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -8,12 +9,11 @@ const PersianCalendar = () => {
 
   // گرفتن تاریخ شمسی امروز
   const getTodayPersian = () => {
-    const today = new Date()
-    const persianDate = today.toLocaleDateString('fa-IR-u-nu-latn').split('/')
+    const today = moment()
     return {
-      year: parseInt(persianDate[0]),
-      month: parseInt(persianDate[1]) - 1, // 0-based index
-      day: parseInt(persianDate[2])
+      year: today.jYear(),
+      month: today.jMonth(), // 0-based index
+      day: today.jDate()
     }
   }
 
@@ -29,107 +29,22 @@ const PersianCalendar = () => {
 
   // تابع برای گرفتن تعداد روزهای ماه
   const getDaysInMonth = (year: number, month: number) => {
-    if (month <= 5) return 31 // فروردین تا شهریور
-    if (month <= 10) return 30 // مهر تا بهمن
-    // اسفند: بررسی سال کبیسه
-    return isLeapYear(year) ? 30 : 29
-  }
-
-  // بررسی سال کبیسه فارسی
-  const isLeapYear = (year: number) => {
-    const breaks = [
-      -61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210,
-      1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178
-    ]
-    
-    const gy = year + 1595
-    let leap = -14
-    let jp = breaks[0]
-    
-    let jump = 0
-    for (let j = 1; j <= 19; j++) {
-      const jm = breaks[j]
-      jump = jm - jp
-      if (year < jm) break
-      leap += Math.floor(jump / 33) * 8 + Math.floor(((jump % 33) / 4))
-      jp = jm
-    }
-    
-    let n = year - jp
-    if (n < jump) {
-      leap += Math.floor(n / 33) * 8 + Math.floor(((n % 33) + 3) / 4)
-      if ((jump % 33) === 4 && (jump - n) === 4) leap++
-      const leapAdj = ((jump % 33) === 1 || (jump % 33) === 2) ? 1 : 0
-      if ((jump % 33) === leapAdj && (jump - n) === leapAdj) leap++
-    }
-    
-    return (leap + 4) % 33 < 5
+    // استفاده از moment-jalaali برای دقت بیشتر
+    const persianDate = moment().jYear(year).jMonth(month).jDate(1)
+    return persianDate.jDaysInMonth()
   }
 
   // تابع برای محاسبه روز شروع ماه
   const getFirstDayOfMonth = (year: number, month: number) => {
-    // تبدیل تاریخ شمسی به میلادی
-    const persianToGregorian = (jy: number, jm: number, jd: number) => {
-      let gy, gm, gd
-      let jy0 = jy - 979
-      let jp = 0
-      
-      const breaks = [
-        -61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210,
-        1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178
-      ]
-      
-      for (let j = 1; j <= 19; j++) {
-        const jm0 = breaks[j]
-        if (jy < jm0) break
-        jp = breaks[j]
-      }
-      
-      let n = jy0 - jp
-      let leap = Math.floor(n / 33) * 8 + Math.floor(((n % 33) + 3) / 4)
-      
-      if ((jp % 33) === 4 && (n - jp) === 4) leap++
-      
-      const sal_a = ((jp % 33) === 1 || (jp % 33) === 2) ? 1 : 0
-      if ((jp % 33) === sal_a && (n - jp) === sal_a) leap++
-      
-      jp = jp + 1029983
-      gy = 1600 + 33 * Math.floor((jp + leap) / 12053)
-      jp = (jp + leap) % 12053
-      
-      gy += 4 * Math.floor(jp / 1461)
-      jp = jp % 1461
-      
-      if (jp > 365) {
-        gy += Math.floor((jp - 1) / 365)
-        jp = (jp - 1) % 365
-      }
-      
-      let jd0 = jd
-      if (jm < 6) jd0 += (jm - 1) * 31
-      else jd0 += (jm - 6) * 30 + 186
-      
-      const gd0 = jp + jd0
-      
-      // تبدیل روز سال به ماه و روز
-      const sal_a2 = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
-      let i
-      for (i = 0; i < 13; i++) {
-        if (gd0 <= sal_a2[i]) break
-      }
-      
-      gm = i
-      gd = gd0 - sal_a2[i - 1]
-      
-      return new Date(gy, gm - 1, gd)
-    }
+    // ساخت تاریخ اول ماه با moment-jalaali
+    const firstDay = moment().jYear(year).jMonth(month).jDate(1)
     
-    const firstDayGregorian = persianToGregorian(year, month + 1, 1)
-    const dayOfWeek = firstDayGregorian.getDay()
+    // گرفتن روز هفته از تاریخ میلادی
+    const dayOfWeek = firstDay.day() // 0=یکشنبه, 1=دوشنبه, ..., 6=شنبه
     
-    // 🔧 مشکل اینجا بود! تبدیل درست:
-    // JavaScript: یکشنبه=0, دوشنبه=1, ..., شنبه=6
-    // Persian Calendar: شنبه=0, یکشنبه=1, ..., جمعه=6
+    // تبدیل به نظام تقویم فارسی (0=شنبه, 1=یکشنبه, ...)
+    // یکشنبه در JS = 0 → باید 1 باشه در فارسی
+    // شنبه در JS = 6 → باید 0 باشه در فارسی
     return (dayOfWeek + 1) % 7
   }
 
@@ -355,7 +270,7 @@ const PersianCalendar = () => {
         </div>
       )}
 
-      {/* تاریخ امروز */}
+      {/* تاریخ امروز با moment-jalaali */}
       <div style={{
         marginTop: '15px',
         padding: '10px',
@@ -366,7 +281,21 @@ const PersianCalendar = () => {
         color: '#E65100',
         border: '1px solid #FFB74D'
       }}>
-        🕐 امروز: {new Date().toLocaleDateString('fa-IR')}
+        🕐 امروز: {moment().format('jYYYY/jMM/jDD')} - {moment().format('dddd')}
+      </div>
+
+      {/* Debug info */}
+      <div style={{
+        marginTop: '10px',
+        padding: '8px',
+        backgroundColor: '#f0f0f0',
+        borderRadius: '5px',
+        fontSize: '12px',
+        color: '#666'
+      }}>
+        🔍 Debug: ماه جاری: {persianMonths[currentMonthIndex]} {currentMonth} | 
+        اول ماه: روز {getFirstDayOfMonth(currentMonth, currentMonthIndex)} 
+        ({persianWeekDays[getFirstDayOfMonth(currentMonth, currentMonthIndex)]})
       </div>
     </div>
   )
