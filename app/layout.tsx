@@ -2,7 +2,7 @@ import './globals.css'
 
 export const metadata = {
   title: 'تقویم فارسی هیبرید',
-  description: 'تقویم فارسی با قابلیت اتصال به Google Calendar',
+  description: 'تقویم فارسی با امکان اتصال به Google Calendar',
 }
 
 export default function RootLayout({
