@@ -1,11 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // حذف output: 'export' برای پشتیبانی از Dynamic routes
   trailingSlash: true,
   images: {
     unoptimized: true
-  },
-  distDir: 'out'
+  }
 }
 
 module.exports = nextConfig
