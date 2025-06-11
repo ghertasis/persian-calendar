@@ -27,11 +27,11 @@ const PersianCalendar = () => {
 
   const persianWeekDays = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']
 
-  // تابع برای گرفتن تعداد روزهای ماه
+  // تابع برای گرفتن تعداد روزهای ماه - روش صحیح
   const getDaysInMonth = (year: number, month: number) => {
-    // استفاده از moment-jalaali برای دقت بیشتر
-    const persianDate = moment().jYear(year).jMonth(month).jDate(1)
-    return persianDate.jDaysInMonth()
+    // روش صحیح: ساخت آخرین روز ماه و گرفتن روز آن
+    const lastDayOfMonth = moment().jYear(year).jMonth(month + 1).jDate(0)
+    return lastDayOfMonth.jDate()
   }
 
   // تابع برای محاسبه روز شروع ماه
@@ -43,8 +43,6 @@ const PersianCalendar = () => {
     const dayOfWeek = firstDay.day() // 0=یکشنبه, 1=دوشنبه, ..., 6=شنبه
     
     // تبدیل به نظام تقویم فارسی (0=شنبه, 1=یکشنبه, ...)
-    // یکشنبه در JS = 0 → باید 1 باشه در فارسی
-    // شنبه در JS = 6 → باید 0 باشه در فارسی
     return (dayOfWeek + 1) % 7
   }
 
@@ -295,7 +293,8 @@ const PersianCalendar = () => {
       }}>
         🔍 Debug: ماه جاری: {persianMonths[currentMonthIndex]} {currentMonth} | 
         اول ماه: روز {getFirstDayOfMonth(currentMonth, currentMonthIndex)} 
-        ({persianWeekDays[getFirstDayOfMonth(currentMonth, currentMonthIndex)]})
+        ({persianWeekDays[getFirstDayOfMonth(currentMonth, currentMonthIndex)]}) |
+        تعداد روز: {getDaysInMonth(currentMonth, currentMonthIndex)}
       </div>
     </div>
   )
