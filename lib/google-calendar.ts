@@ -8,7 +8,7 @@ const REDIRECT_URI = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/google/callbac
 export interface GoogleEvent {
   id: string
   title: string
-  description?: string
+  description?: string | null  // اضافه کردن null
   start: string
   end: string
   allDay?: boolean
@@ -17,8 +17,8 @@ export interface GoogleEvent {
 export interface GoogleCalendar {
   id: string
   summary: string
-  primary?: boolean | null  // اضافه کردن null
-  backgroundColor?: string | null  // اضافه کردن این فیلد
+  primary?: boolean | null
+  backgroundColor?: string | null
 }
 
 export function createGoogleAuth(): OAuth2Client {
@@ -61,7 +61,7 @@ export async function getUserCalendars(accessToken: string, refreshToken?: strin
     return response.data.items?.map(item => ({
       id: item.id!,
       summary: item.summary!,
-      primary: item.primary ?? false,  // تبدیل null به false
+      primary: item.primary ?? false,
       backgroundColor: item.backgroundColor || null
     })) || []
   } catch (error) {
@@ -91,7 +91,7 @@ export async function getGoogleEvents(
     return response.data.items?.map(event => ({
       id: event.id!,
       title: event.summary || 'No Title',
-      description: event.description,
+      description: event.description || null,  // تبدیل undefined به null
       start: event.start?.dateTime || event.start?.date!,
       end: event.end?.dateTime || event.end?.date!,
       allDay: !event.start?.dateTime
@@ -114,7 +114,7 @@ export async function createGoogleEvent(
     calendarId,
     requestBody: {
       summary: event.title,
-      description: event.description,
+      description: event.description || undefined,
       start: event.allDay ? { date: event.start.split('T')[0] } : { dateTime: event.start },
       end: event.allDay ? { date: event.end.split('T')[0] } : { dateTime: event.end }
     }
@@ -123,7 +123,7 @@ export async function createGoogleEvent(
   return {
     id: response.data.id!,
     title: response.data.summary!,
-    description: response.data.description,
+    description: response.data.description || null,
     start: response.data.start?.dateTime || response.data.start?.date!,
     end: response.data.end?.dateTime || response.data.end?.date!,
     allDay: !response.data.start?.dateTime
@@ -144,7 +144,7 @@ export async function updateGoogleEvent(
     eventId,
     requestBody: {
       summary: event.title,
-      description: event.description,
+      description: event.description || undefined,
       start: event.allDay && event.start ? { date: event.start.split('T')[0] } : event.start ? { dateTime: event.start } : undefined,
       end: event.allDay && event.end ? { date: event.end.split('T')[0] } : event.end ? { dateTime: event.end } : undefined
     }
@@ -153,7 +153,7 @@ export async function updateGoogleEvent(
   return {
     id: response.data.id!,
     title: response.data.summary!,
-    description: response.data.description,
+    description: response.data.description || null,
     start: response.data.start?.dateTime || response.data.start?.date!,
     end: response.data.end?.dateTime || response.data.end?.date!,
     allDay: !response.data.start?.dateTime
