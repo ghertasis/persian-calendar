@@ -64,7 +64,7 @@ export function getPersianWeekDayName(weekDay: number): string {
 }
 
 export function isLeapYear(year: number): boolean {
-  return moment.jIsLeapYear(year)
+  return moment().jYear(year).jIsLeapYear()
 }
 
 export function getDaysInMonth(year: number, month: number): number {

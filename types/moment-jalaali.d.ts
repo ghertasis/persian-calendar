@@ -34,6 +34,10 @@ declare module 'moment-jalaali' {
     isSameOrAfter(date: JMoment | Moment, unit?: string): boolean;
     isBefore(date: JMoment | Moment, unit?: string): boolean;
     isAfter(date: JMoment | Moment, unit?: string): boolean;
+    
+    // متدهای کمکی جلالی
+    jDaysInMonth(): number;
+    jIsLeapYear(): boolean;
   }
 
   interface MomentJalaali {
@@ -48,6 +52,10 @@ declare module 'moment-jalaali' {
     unix(timestamp: number): JMoment;
     utc(): JMoment;
     utc(date: MomentInput): JMoment;
+    
+    // متدهای استاتیک جلالی
+    jIsLeapYear(year: number): boolean;
+    jDaysInMonth(year: number, month: number): number;
   }
 
   const moment: MomentJalaali;
