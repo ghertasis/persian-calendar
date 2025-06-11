@@ -179,7 +179,8 @@ const PersianCalendar = () => {
   }
 
   // بررسی اینکه آیا روز انتخاب شده امروز است
-  const isToday = (day: number) => {
+  const isToday = (day: number | null): boolean => {
+    if (!day) return false
     const today = getTodayPersian()
     return (
       day === today.day &&
