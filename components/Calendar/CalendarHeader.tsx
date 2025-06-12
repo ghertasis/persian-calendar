@@ -23,13 +23,13 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   const monthName = PERSIAN_MONTHS[month - 1];
 
   return (
-    <header className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+    <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
       {/* Logo & Navigation */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">📅</span>
-          </di>
+            <span className="text-white font-bold text-lg">📅</span
+          </div>
           <h1 className="text-xl font-semibold text-gray-900">تقویم</h1>
         </div>
         
@@ -75,14 +75,3 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           <button
             onClick={onCreateEvent}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2"
-          >
-            <span className="text-lg">+</span>
-            ایجاد
-          </button>
-        )}
-      </div>
-    </header>
-  );
-};
-
-export default CalendarHeader;
