@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import GoogleAuth from '../components/GoogleAuth';
 import PersianCalendar from '../components/PersianCalendar';
+import DebugOAuth from '../components/DebugOAuth';
 
 interface User {
   email: string;
@@ -13,6 +14,7 @@ interface User {
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | undefined>();
+  const [showDebug, setShowDebug] = useState(true); // فعلاً همیشه نمایش بده
 
   const handleAuthChange = (authenticated: boolean, userData?: User) => {
     setIsAuthenticated(authenticated);
@@ -30,6 +32,21 @@ export default function Home() {
             تقویم فارسی با قابلیت نمایش رویدادهای Google Calendar
           </p>
         </div>
+
+        {/* کامپوننت عیب‌یابی - فقط برای debug */}
+        {showDebug && (
+          <div className="mb-6">
+            <DebugOAuth />
+            <div className="text-center">
+              <button
+                onClick={() => setShowDebug(false)}
+                className="text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                مخفی کردن پنل debug
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* کامپوننت احراز هویت */}
         <GoogleAuth onAuthChange={handleAuthChange} />
@@ -88,6 +105,18 @@ export default function Home() {
             </span>
           </div>
         </div>
+
+        {/* نمایش debug info فعلی */}
+        {!showDebug && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => setShowDebug(true)}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              🔧 نمایش پنل عیب‌یابی
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );
