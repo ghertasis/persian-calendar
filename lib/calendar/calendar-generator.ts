@@ -11,105 +11,142 @@ import {
   gregorianToPersian
 } from './persian-utils';
 
-// باقی کد...
-import { CalendarMonth, CalendarWeek, CalendarDay, PersianDate } from '../../types/calendar';
-import { 
-  getCurrentPersianDate, 
-  getPersianDaysInMonth, 
-  getFirstDayOfPersianMonth,
-  PERSIAN_MONTHS,
-  persianToGregorian,
-  gregorianToPersian
-} from './persian-utils';
-
-export function generateCalendarMonth(year: number, month: number): CalendarMonth {
-  const today = getCurrentPersianDate();
-  const daysInMonth = getPersianDaysInMonth(year, month);
-  const firstDayOfWeek = getFirstDayOfPersianMonth(year, month);
+export class CalendarGenerator {
+  static generateMonth(year: number, month: number, events: CalendarEvent[] = []): CalendarMonth {
+    const daysInMonth = getPersianDaysInMonth(year, month);
+    const firstDayOfMonth = getFirstDayOfPersianMonth(year, month);
+    const today = getCurrentPersianDate();
+    
+    const weeks: CalendarWeek[] = [];
+    let currentWeek: CalendarDay[] = [];
+    
+    // اضافه کردن روزهای خالی اول ماه
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      const prevMonthDate = this.getPreviousMonthDate(year, month, firstDayOfMonth - i);
+      currentWeek.unshift(this.createCalendarDay(
+        prevMonthDate,
+        events,
+        false, // isCurrentMonth
+        this.isToday(prevMonthDate, today)
+      ));
+    }
+    
+    // اضافه کردن روزهای ماه جاری
+    for (let day = 1; day <= daysInMonth; day++) {
+      const persianDate: PersianDate = {
+        year,
+        month,
+        day,
+        weekDay: (firstDayOfMonth + day - 1) % 7
+      };
+      
+      currentWeek.push(this.createCalendarDay(
+        persianDate,
+        events,
+        true, // isCurrentMonth
+        this.isToday(persianDate, today)
+      ));
+      
+      // اگر هفته کامل شد، به لیست هفته‌ها اضافه کن
+      if (currentWeek.length === 7) {
+        weeks.push({ days: [...currentWeek] });
+        currentWeek = [];
+      }
+    }
+    
+    // اضافه کردن روزهای ماه بعد برای تکمیل آخرین هفته
+    if (currentWeek.length > 0) {
+      const remainingDays = 7 - currentWeek.length;
+      for (let i = 1; i <= remainingDays; i++) {
+        const nextMonthDate = this.getNextMonthDate(year, month, i);
+        currentWeek.push(this.createCalendarDay(
+          nextMonthDate,
+          events,
+          false, // isCurrentMonth
+          this.isToday(nextMonthDate, today)
+        ));
+      }
+      weeks.push({ days: currentWeek });
+    }
+    
+    return {
+      year,
+      month,
+      weeks,
+      totalDays: daysInMonth
+    };
+  }
   
-  const weeks: CalendarWeek[] = [];
-  let currentWeek: CalendarDay[] = [];
+  private static createCalendarDay(
+    persianDate: PersianDate, 
+    events: CalendarEvent[], 
+    isCurrentMonth: boolean,
+    isToday: boolean
+  ): CalendarDay {
+    const gregorianDate = persianToGregorian(persianDate.year, persianDate.month, persianDate.day);
+    
+    // فیلتر کردن رویدادهای مربوط به این روز
+    const dayEvents = events.filter(event => {
+      const eventPersianDate = gregorianToPersian(event.startTime);
+      return eventPersianDate.year === persianDate.year &&
+             eventPersianDate.month === persianDate.month &&
+             eventPersianDate.day === persianDate.day;
+    });
+    
+    return {
+      persianDate,
+      gregorianDate,
+      events: dayEvents,
+      isCurrentMonth,
+      isToday,
+      isWeekend: persianDate.weekDay === 5 // جمعه
+    };
+  }
   
-  // Previous month's trailing days
-  const prevMonth = month === 1 ? 12 : month - 1;
-  const prevYear = month === 1 ? year - 1 : year;
-  const daysInPrevMonth = getPersianDaysInMonth(prevYear, prevMonth);
+  private static isToday(persianDate: PersianDate, today: PersianDate): boolean {
+    return persianDate.year === today.year &&
+           persianDate.month === today.month &&
+           persianDate.day === today.day;
+  }
   
-  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-    const day = daysInPrevMonth - i;
-    const date: PersianDate = {
+  private static getPreviousMonthDate(year: number, month: number, daysBack: number): PersianDate {
+    let prevMonth = month - 1;
+    let prevYear = year;
+    
+    if (prevMonth < 1) {
+      prevMonth = 12;
+      prevYear--;
+    }
+    
+    const daysInPrevMonth = getPersianDaysInMonth(prevYear, prevMonth);
+    const day = daysInPrevMonth - daysBack + 1;
+    
+    return {
       year: prevYear,
       month: prevMonth,
       day,
-      weekDay: firstDayOfWeek - 1 - i
+      weekDay: 0 // محاسبه دقیق weekDay در صورت نیاز
     };
-    
-    currentWeek.push({
-      date,
-      isCurrentMonth: false,
-      isToday: false,
-      events: [],
-      gregorianDate: persianToGregorian(prevYear, prevMonth, day)
-    });
   }
   
-  // Current month's days
-  for (let day = 1; day <= daysInMonth; day++) {
-    const date: PersianDate = {
-      year,
-      month,
-      day,
-      weekDay: (firstDayOfWeek + day - 1) % 7
-    };
+  private static getNextMonthDate(year: number, month: number, day: number): PersianDate {
+    let nextMonth = month + 1;
+    let nextYear = year;
     
-    const isToday = today.year === year && today.month === month && today.day === day;
-    
-    currentWeek.push({
-      date,
-      isCurrentMonth: true,
-      isToday,
-      events: [],
-      gregorianDate: persianToGregorian(year, month, day)
-    });
-    
-    if (currentWeek.length === 7) {
-      weeks.push({ days: [...currentWeek] });
-      currentWeek = [];
+    if (nextMonth > 12) {
+      nextMonth = 1;
+      nextYear++;
     }
-  }
-  
-  // Next month's leading days
-  const nextMonth = month === 12 ? 1 : month + 1;
-  const nextYear = month === 12 ? year + 1 : year;
-  let nextMonthDay = 1;
-  
-  while (currentWeek.length < 7) {
-    const date: PersianDate = {
+    
+    return {
       year: nextYear,
       month: nextMonth,
-      day: nextMonthDay,
-      weekDay: (currentWeek.length) % 7
+      day,
+      weekDay: 0 // محاسبه دقیق weekDay در صورت نیاز
     };
-    
-    currentWeek.push({
-      date,
-      isCurrentMonth: false,
-      isToday: false,
-      events: [],
-      gregorianDate: persianToGregorian(nextYear, nextMonth, nextMonthDay)
-    });
-    
-    nextMonthDay++;
   }
   
-  if (currentWeek.length > 0) {
-    weeks.push({ days: currentWeek });
-  }
-  
-  return {
-    year,
-    month,
-    weeks,
-    monthName: PERSIAN_MONTHS[month - 1]
-  };
-}
+  static getMonthEvents(year: number, month: number, allEvents: CalendarEvent[]): CalendarEvent[] {
+    return allEvents.filter(event => {
+      const eventPersianDate = gregorianToPersian(event.startTime);
+      return eventPersianDate.year === year && eventPersianDate.
