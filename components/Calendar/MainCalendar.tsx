@@ -26,17 +26,24 @@ const MainCalendar: React.FC<MainCalendarProps> = ({
   const [currentMonth, setCurrentMonth] = useState(today.month);
   const [selectedDate, setSelectedDate] = useState<PersianDate | undefined>();
   const [calendarData, setCalendarData] = useState<CalendarMonth | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Generate calendar data
   useEffect(() => {
+    console.log('🔄 Generating calendar for:', currentYear, currentMonth);
+    console.log('📅 Today:', today);
+    console.log('🎯 Events:', events);
+    
     try {
-      // استفاده از static method
       const data = CalendarGenerator.generateMonth(currentYear, currentMonth, events);
+      console.log('✅ Generated calendar data:', data);
       setCalendarData(data);
+      setError(null);
     } catch (error) {
-      console.error('Error generating calendar:', error);
+      console.error('❌ Error generating calendar:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error');
     }
-  }, [currentYear, currentMonth, events]);
+  }, [currentYear, currentMonth, events, today]);
 
   const handlePrevMonth = useCallback(() => {
     if (currentMonth === 1) {
@@ -85,12 +92,32 @@ const MainCalendar: React.FC<MainCalendarProps> = ({
     return event.startTime > now && event.startTime <= weekFromNow;
   }).slice(0, 10);
 
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">❌ خطا در بارگذاری تقویم</div>
+          <p className="text-gray-600">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+          >
+            تلاش مجدد
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!calendarData) {
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
           <p className="text-gray-600">در حال بارگذاری تقویم...</p>
+          <p className="text-sm text-gray-500 mt-2">
+            سال: {currentYear} - ماه: {currentMonth}
+          </p>
         </div>
       </div>
     );
