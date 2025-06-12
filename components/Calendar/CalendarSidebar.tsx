@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CalendarEvent, PersianDate } from '../../types/calendar';
+import { CalendarEvent, PersianDate } from '../../lib/calendar/persian-utils'; // ✅ مسیر تغییر کرد
 import { formatPersianDate, getCurrentPersianDate } from '../../lib/calendar/persian-utils';
 import EventBlock from './EventBlock';
 
@@ -88,7 +88,7 @@ const CalendarSidebar: React.FC<CalendarSidebarProps> = ({
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <div className="text-4xl mb-2">📅</div>
+              <div className="text-4xl mb-2">📅</div
               <p className="text-sm">رویداد آینده‌ای وجود ندارد</p>
             </div>
           )}
