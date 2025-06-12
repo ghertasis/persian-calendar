@@ -1,3 +1,17 @@
+import { 
+  CalendarMonth, 
+  CalendarWeek, 
+  CalendarDay, 
+  CalendarEvent,
+  PersianDate,
+  getCurrentPersianDate,
+  getPersianDaysInMonth,
+  getFirstDayOfPersianMonth,
+  persianToGregorian,
+  gregorianToPersian
+} from './persian-utils';
+
+// باقی کد...
 import { CalendarMonth, CalendarWeek, CalendarDay, PersianDate } from '../../types/calendar';
 import { 
   getCurrentPersianDate, 
