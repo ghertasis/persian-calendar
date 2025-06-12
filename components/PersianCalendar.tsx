@@ -255,7 +255,7 @@ const PersianCalendar: React.FC = () => {
       {/* نمایش وضعیت رویدادها */}
       {loading && (
         <div className="text-center text-blue-600 mb-4">
-          🔄 د حال بارگذاری رویدادها...
+          🔄 در حال بارگذاری رویدادها...
         </div>
       )}
       
@@ -310,14 +310,14 @@ const PersianCalendar: React.FC = () => {
                   <h4 className="font-semibold text-gray-800">{event.summary}</h4>
                   {event.start.dateTime && (
                     <p className="text-sm text-gray-600">
-                      � {new Date(event.start.dateTime).toLocaleTimeString('fa-IR', {
+                      🕐 {new Date(event.start.dateTime).toLocaleTimeString('fa-IR', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
                     </p>
                   )}
                   {event.location && (
-                    <p className="text-sm text-gray-600">📍 {eventlocation}</p>
+                    <p className="text-sm text-gray-600">📍 {event.location}</p>
                   )}
                   {event.description && (
                     <p className="text-sm text-gray-700 mt-1">{event.description}</p>
