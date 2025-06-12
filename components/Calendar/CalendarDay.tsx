@@ -1,88 +1,61 @@
-'use client';
-
 import React from 'react';
 import { CalendarDay as CalendarDayType } from '../../lib/calendar/persian-utils';
 import { PERSIAN_WEEKDAYS_SHORT } from '../../lib/calendar/persian-utils';
 
 interface CalendarDayProps {
   day: CalendarDayType;
-  onClick: (day: CalendarDayType) => void;
-  onEventClick?: (eventId: string) => void;
+  onDayClick?: (day: CalendarDayType) => void;
+  onEventClick?: (event: any) => void;
 }
 
-const CalendarDay: React.FC<CalendarDayProps> = ({ 
-  day, 
-  onClick, 
-  onEventClick 
+export const CalendarDay: React.FC<CalendarDayProps> = ({
+  day,
+  onDayClick,
+  onEventClick
 }) => {
-  const { date, isCurrentMonth, isToday, events } = day;
+  const { persianDate, isCurrentMonth, isToday, events, isWeekend } = day;
 
   return (
     <div
       className={`
-        min-h-[120px] border-l border-b border-gray-200 bg-white cursor-pointer
-        hover:bg-gray-50 transition-colors relative
-        ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''}
-        ${isToday ? 'bg-blue-50 border-blue-200' : ''}
+        min-h-[100px] p-2 border border-gray-200 cursor-pointer
+        ${isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
+        ${isToday ? 'bg-blue-50 border-blue-300' : ''}
+        ${isWeekend ? 'bg-red-50' : ''}
+        hover:bg-gray-100 transition-colors
       `}
-      onClick={() => onClick(day)}
+      onClick={() => onDayClick?.(day)}
     >
-      {/* Day Number */}
-      <div className="p-2">
-        <span
-          className={`
-            inline-flex items-center justify-center w-8 h-8 text-sm font-medium rounded-full
-            ${isToday 
-              ? 'bg-blue-600 text-white' 
-              : isCurrentMonth 
-                ? 'text-gray-900 hover:bg-gray-100' 
-                : 'text-gray-400'
-            }
-          `}
-        >
-          {date.day}
-        </span>
+      <div className={`
+        text-sm font-medium
+        ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
+        ${isToday ? 'text-blue-600 font-bold' : ''}
+        ${isWeekend ? 'text-red-600' : ''}
+      `}>
+        {persianDate.day}
       </div>
-
-      {/* Events */}
-      <div className="px-2 pb-2 space-y-1">
-        {events.slice(0, 3).map((event, index) => (
-          <div
-            key={event.id}
-            className={`
-              text-xs p-1 rounded text-white cursor-pointer
-              hover:opacity-80 transition-opacity truncate
-            `}
-            style={{ backgroundColor: event.color }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onEventClick?.(event.id);
-            }}
-          >
-            {event.isAllDay ? (
-              <span>{event.title}</span>
-            ) : (
-              <span>
-                {event.startTime} {event.title}
-              </span>
-            )}
-          </div>
-        ))}
-
-        {/* More events indicator */}
-        {events.length > 3 && (
-          <div className="text-xs text-gray-500 px-1">
-            +{events.length - 3} بیشتر
-          </div>
-        )}
-      </div>
-
-      {/* Today indicator dot */}
-      {isToday && (
-        <div className="absolute top-1 right-1 w-2 h-2 bg-blue-600 rounded-full"></div>
+      
+      {events && events.length > 0 && (
+        <div className="mt-1 space-y-1">
+          {events.slice(0, 3).map((event, index) => (
+            <div
+              key={index}
+              className="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded truncate"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEventClick?.(event);
+              }}
+            >
+              {event.title}
+            </div>
+          ))}
+          {events.length > 3 && (
+            <div className="text-xs text-gray-500">
+              +{events.length - 3} مورد دیگر
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
 };
-
-export default CalendarDay;
