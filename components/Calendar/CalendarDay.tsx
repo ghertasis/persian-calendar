@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CalendarDay as CalendarDayType } from '../../types/calendar';
+import { CalendarDay as CalendarDayType } from '../../lib/calendar/persian-utils';
 import { PERSIAN_WEEKDAYS_SHORT } from '../../lib/calendar/persian-utils';
 
 interface CalendarDayProps {

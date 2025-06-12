@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { CalendarMonth, CalendarDay, CalendarEvent, PersianDate } from '../../types/calendar';
-import { generateCalendarMonth } from '../../lib/calendar/calendar-generator';
+import { CalendarGenerator } from '../../lib/calendar/calendar-generator';
 import { getCurrentPersianDate } from '../../lib/calendar/persian-utils';
 import CalendarHeader from './CalendarHeader';
 import CalendarGrid from './CalendarGrid';
