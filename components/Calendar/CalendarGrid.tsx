@@ -1,7 +1,7 @@
 import React from 'react';
 import { CalendarMonth, CalendarDay as CalendarDayType } from '../../lib/calendar/persian-utils';
 import { PERSIAN_WEEKDAYS } from '../../lib/calendar/persian-utils';
-import { CalendarDay } from './CalendarDay'; // named import به جای default
+import { CalendarDay } from './CalendarDay';
 
 interface CalendarGridProps {
   month: CalendarMonth;
@@ -28,16 +28,18 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
         ))}
       </div>
 
-      {/* Grid روزها */}
+      {/* Grid روزها - از weeks استفاده می‌کنیم */}
       <div className="grid grid-cols-7 gap-px bg-gray-200">
-        {month.days.map((day, index) => (
-          <CalendarDay
-            key={`${day.persianDate.year}-${day.persianDate.month}-${day.persianDate.day}-${index}`}
-            day={day}
-            onDayClick={onDayClick}
-            onEventClick={onEventClick}
-          />
-        ))}
+        {month.weeks.map((week, weekIndex) =>
+          week.days.map((day, dayIndex) => (
+            <CalendarDay
+              key={`${day.persianDate.year}-${day.persianDate.month}-${day.persianDate.day}-${weekIndex}-${dayIndex}`}
+              day={day}
+              onDayClick={onDayClick}
+              onEventClick={onEventClick}
+            />
+          ))
+        )}
       </div>
     </div>
   );
