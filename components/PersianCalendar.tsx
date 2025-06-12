@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import moment from 'moment-jalaali';
-import { useGoogleEvents, groupEventsByDate } from '../hooks/useGoogleEvents';
 
 moment.loadPersian();
 
@@ -21,7 +20,72 @@ interface GoogleEvent {
   location?: string;
 }
 
-const PersianCalendarWithEvents: React.FC = () => {
+// Hook for fetching Google Calendar events
+const useGoogleEvents = (month?: number, year?: number) => {
+  const [events, setEvents] = useState<GoogleEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // محاسبه بازه زمانی برای ماه مورد نظر
+      const timeMin = year && month !== undefined 
+        ? new Date(year, month, 1).toISOString()
+        : new Date().toISOString();
+        
+      const timeMax = year && month !== undefined
+        ? new Date(year, month + 1, 0).toISOString()
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      const response = await fetch(`/api/calendars?timeMin=${timeMin}&timeMax=${timeMax}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch events');
+      }
+      
+      const data = await response.json();
+      setEvents(data.events || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا در دریافت رویدادها');
+      console.error('Error fetching Google events:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, [month, year]);
+
+  return {
+    events,
+    loading,
+    error,
+    refetch: fetchEvents
+  };
+};
+
+// گروه‌بندی رویدادها بر اساس تاریخ
+const groupEventsByDate = (events: GoogleEvent[]) => {
+  const grouped: { [date: string]: GoogleEvent[] } = {};
+  
+  events.forEach(event => {
+    const eventDate = event.start.date || event.start.dateTime?.split('T')[0];
+    if (eventDate) {
+      if (!grouped[eventDate]) {
+        grouped[eventDate] = [];
+      }
+      grouped[eventDate].push(event);
+    }
+  });
+  
+  return grouped;
+};
+
+const PersianCalendar: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState<number>(moment().jMonth());
   const [currentYear, setCurrentYear] = useState<number>(moment().jYear());
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -191,7 +255,7 @@ const PersianCalendarWithEvents: React.FC = () => {
       {/* نمایش وضعیت رویدادها */}
       {loading && (
         <div className="text-center text-blue-600 mb-4">
-          🔄 در حال بارگذاری رویدادها...
+          🔄 د حال بارگذاری رویدادها...
         </div>
       )}
       
@@ -246,14 +310,14 @@ const PersianCalendarWithEvents: React.FC = () => {
                   <h4 className="font-semibold text-gray-800">{event.summary}</h4>
                   {event.start.dateTime && (
                     <p className="text-sm text-gray-600">
-                      🕐 {new Date(event.start.dateTime).toLocaleTimeString('fa-IR', {
+                      � {new Date(event.start.dateTime).toLocaleTimeString('fa-IR', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
                     </p>
                   )}
                   {event.location && (
-                    <p className="text-sm text-gray-600">📍 {event.location}</p>
+                    <p className="text-sm text-gray-600">📍 {eventlocation}</p>
                   )}
                   {event.description && (
                     <p className="text-sm text-gray-700 mt-1">{event.description}</p>
@@ -268,4 +332,4 @@ const PersianCalendarWithEvents: React.FC = () => {
   );
 };
 
-export default PersianCalendarWithEvents;
+export default PersianCalendar;

@@ -1,4 +1,4 @@
-import PersianCalendarWithEvents from '../components/PersianCalendarWithEvents';
+import PersianCalendar from '../components/PersianCalendar';
 
 export default function Home() {
   return (
@@ -7,7 +7,7 @@ export default function Home() {
         <h1 className="text-3xl font-bold text-center mb-8 text-gray-800" dir="rtl">
           📅 تقویم شمسی با رویدادهای Google
         </h1>
-        <PersianCalendarWithEvents />
+        <PersianCalendar />
       </div>
     </main>
   );
