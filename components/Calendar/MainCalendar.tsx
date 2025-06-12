@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { CalendarMonth, CalendarDay, CalendarEvent, PersianDate } from '../../types/calendar';
+import { CalendarMonth, CalendarDay, CalendarEvent, PersianDate } from '../../lib/calendar/persian-utils';
 import { CalendarGenerator } from '../../lib/calendar/calendar-generator';
 import { getCurrentPersianDate } from '../../lib/calendar/persian-utils';
 import CalendarHeader from './CalendarHeader';
@@ -29,7 +29,8 @@ const MainCalendar: React.FC<MainCalendarProps> = ({
 
   // Generate calendar data
   useEffect(() => {
-    const data = generateCalendarMonth(currentYear, currentMonth);
+    const generator = new CalendarGenerator();
+    const data = generator.generateCalendarMonth(currentYear, currentMonth);
     
     // Add events to calendar days
     data.weeks.forEach(week => {

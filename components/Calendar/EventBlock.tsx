@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CalendarEvent } from '../../types/calendar';
+import { CalendarEvent } from '../../lib/calendar/persian-utils';
 
 interface EventBlockProps {
   event: CalendarEvent;

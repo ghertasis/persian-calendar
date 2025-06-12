@@ -1,4 +1,4 @@
-import { CalendarEvent } from '../../types/calendar';
+import { CalendarEvent } from './persian-utils';
 import { getCurrentPersianDate } from './persian-utils';
 
 export function generateSampleEvents(): CalendarEvent[] {
