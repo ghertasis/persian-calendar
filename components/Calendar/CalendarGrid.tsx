@@ -1,50 +1,43 @@
-'use client';
-
 import React from 'react';
-import { CalendarMonth, CalendarDay as CalendarDayType } from '../../types/calendar';
+import { CalendarMonth, CalendarDay as CalendarDayType } from '../../lib/calendar/persian-utils';
 import { PERSIAN_WEEKDAYS } from '../../lib/calendar/persian-utils';
-import CalendarDay from './CalendarDay';
+import { CalendarDay } from './CalendarDay'; // named import به جای default
 
 interface CalendarGridProps {
-  calendarData: CalendarMonth;
-  onDayClick: (day: CalendarDayType) => void;
-  onEventClick?: (eventId: string) => void;
+  month: CalendarMonth;
+  onDayClick?: (day: CalendarDayType) => void;
+  onEventClick?: (event: any) => void;
 }
 
-const CalendarGrid: React.FC<CalendarGridProps> = ({
-  calendarData,
+export const CalendarGrid: React.FC<CalendarGridProps> = ({
+  month,
   onDayClick,
   onEventClick
 }) => {
   return (
-    <div className="flex-1 bg-white">
-      {/* Weekday Headers */}
-      <div className="grid grid-cols-7 border-b border-gray-200">
-        {PERSIAN_WEEKDAYS.map((weekday, index) => (
+    <div className="bg-white rounded-lg shadow">
+      {/* Header با نام روزهای هفته */}
+      <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-t-lg overflow-hidden">
+        {PERSIAN_WEEKDAYS.map((day) => (
           <div
-            key={weekday}
-            className={`
-              p-4 text-center text-sm font-semibold text-gray-700 border-l border-gray-200
-              ${index === 6 ? 'text-red-600' : ''} // جمعه قرمز
-            `}
+            key={day}
+            className="bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 text-center"
           >
-            {weekday}
+            {day}
           </div>
         ))}
       </div>
 
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7">
-        {calendarData.weeks.map((week, weekIndex) =>
-          week.days.map((day, dayIndex) => (
-            <CalendarDay
-              key={`${day.date.year}-${day.date.month}-${day.date.day}`}
-              day={day}
-              onClick={onDayClick}
-              onEventClick={onEventClick}
-            />
-          ))
-        )}
+      {/* Grid روزها */}
+      <div className="grid grid-cols-7 gap-px bg-gray-200">
+        {month.days.map((day, index) => (
+          <CalendarDay
+            key={`${day.persianDate.year}-${day.persianDate.month}-${day.persianDate.day}-${index}`}
+            day={day}
+            onDayClick={onDayClick}
+            onEventClick={onEventClick}
+          />
+        ))}
       </div>
     </div>
   );
