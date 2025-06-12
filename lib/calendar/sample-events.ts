@@ -1,17 +1,23 @@
 import { CalendarEvent } from './persian-utils';
-import { getCurrentPersianDate } from './persian-utils';
 
 export function generateSampleEvents(): CalendarEvent[] {
-  const today = getCurrentPersianDate();
+  const now = new Date();
   
+  // Helper function to create dates
+  const createDate = (daysFromNow: number, hour: number = 9, minute: number = 0): Date => {
+    const date = new Date();
+    date.setDate(now.getDate() + daysFromNow);
+    date.setHours(hour, minute, 0, 0);
+    return date;
+  };
+
   return [
     {
       id: '1',
       title: 'جلسه تیم توسعه',
       description: 'بررسی پیشرفت پروژه و برنامه‌ریزی هفته آینده',
-      startDate: today,
-      startTime: '09:00',
-      endTime: '10:30',
+      startTime: createDate(0, 9, 0),    // امروز ساعت 9:00
+      endTime: createDate(0, 10, 30),    // امروز ساعت 10:30
       color: '#4285f4',
       isAllDay: false,
       location: 'اتاق جلسات A',
@@ -20,9 +26,9 @@ export function generateSampleEvents(): CalendarEvent[] {
     {
       id: '2',
       title: 'ارائه پروژه',
-      startDate: { ...today, day: today.day + 1 },
-      startTime: '14:00',
-      endTime: '15:30',
+      description: 'ارائه نتایج پروژه به مدیریت',
+      startTime: createDate(1, 14, 0),   // فردا ساعت 14:00
+      endTime: createDate(1, 15, 30),    // فردا ساعت 15:30
       color: '#db4437',
       isAllDay: false,
       location: 'سالن کنفرانس',
@@ -30,9 +36,9 @@ export function generateSampleEvents(): CalendarEvent[] {
     },
     {
       id: '3',
-      title: 'تعطیلات عید نوروز',
-      startDate: { year: 1404, month: 1, day: 1, weekDay: 0 },
-      endDate: { year: 1404, month: 1, day: 13, weekDay: 5 },
+      title: 'تعطیلات آخر هفته',
+      startTime: createDate(5, 0, 0),    // 5 روز بعد
+      endTime: createDate(7, 23, 59),    // 7 روز بعد
       color: '#0f9d58',
       isAllDay: true,
       source: 'local'
@@ -40,9 +46,9 @@ export function generateSampleEvents(): CalendarEvent[] {
     {
       id: '4',
       title: 'دندانپزشک',
-      startDate: { ...today, day: today.day + 3 },
-      startTime: '16:00',
-      endTime: '17:00',
+      description: 'ویزیت دندانپزشک',
+      startTime: createDate(3, 16, 0),   // 3 روز بعد ساعت 16:00
+      endTime: createDate(3, 17, 0),     // 3 روز بعد ساعت 17:00
       color: '#f4b400',
       isAllDay: false,
       location: 'کلینیک دکتر احمدی',
@@ -51,10 +57,22 @@ export function generateSampleEvents(): CalendarEvent[] {
     {
       id: '5',
       title: 'جشن تولد',
-      startDate: { ...today, day: today.day + 5 },
-      startTime: '19:00',
+      description: 'جشن تولد دوست',
+      startTime: createDate(5, 19, 0),   // 5 روز بعد ساعت 19:00
+      endTime: createDate(5, 22, 0),     // 5 روز بعد ساعت 22:00
       color: '#ff6d01',
       isAllDay: false,
+      source: 'local'
+    },
+    {
+      id: '6',
+      title: 'ورزش صبحگاهی',
+      description: 'دویدن در پارک',
+      startTime: createDate(1, 6, 30),   // فردا ساعت 6:30
+      endTime: createDate(1, 7, 30),     // فردا ساعت 7:30
+      color: '#9c27b0',
+      isAllDay: false,
+      location: 'پارک شهر',
       source: 'local'
     }
   ];

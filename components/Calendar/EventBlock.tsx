@@ -18,6 +18,19 @@ const EventBlock: React.FC<EventBlockProps> = ({
     onClick(event.id);
   };
 
+  // Date object رو به string تبدیل می‌کنیم
+  const formatTime = (date: Date): string => {
+    return date.toLocaleTimeString('fa-IR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  };
+
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString('fa-IR');
+  };
+
   return (
     <div 
       className="p-2 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
@@ -34,16 +47,16 @@ const EventBlock: React.FC<EventBlockProps> = ({
             {event.title}
           </div>
           
-          {!event.isAllDay && event.startTime && (
+          {!event.isAllDay && (
             <div className="text-xs text-gray-600 mb-1">
-              {typeof event.startTime === 'string' ? event.startTime : ''}
-              {event.endTime && typeof event.endTime === 'string' && ` - ${event.endTime}`}
+              {formatTime(event.startTime)}
+              {event.endTime && ` - ${formatTime(event.endTime)}`}
             </div>
           )}
           
           {showDate && (
             <div className="text-xs text-gray-500">
-              {event.startDate.year}/{event.startDate.month}/{event.startDate.day}
+              {formatDate(event.startTime)}
             </div>
           )}
           

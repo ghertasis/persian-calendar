@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { CalendarMonth, CalendarDay, CalendarEvent, PersianDate } from '../../lib/calendar/persian-utils';
+import { CalendarMonth, CalendarDay, CalendarEvent, PersianDate, CalendarWeek } from '../../lib/calendar/persian-utils';
 import { CalendarGenerator } from '../../lib/calendar/calendar-generator';
-import { getCurrentPersianDate } from '../../lib/calendar/persian-utils';
+import { getCurrentPersianDate, gregorianToPersian } from '../../lib/calendar/persian-utils';
 import CalendarHeader from './CalendarHeader';
 import CalendarGrid from './CalendarGrid';
 import CalendarSidebar from './CalendarSidebar';
@@ -29,21 +29,13 @@ const MainCalendar: React.FC<MainCalendarProps> = ({
 
   // Generate calendar data
   useEffect(() => {
-    const generator = new CalendarGenerator();
-    const data = generator.generateCalendarMonth(currentYear, currentMonth);
-    
-    // Add events to calendar days
-    data.weeks.forEach(week => {
-      week.days.forEach(day => {
-        day.events = events.filter(event => 
-          event.startDate.year === day.date.year &&
-          event.startDate.month === day.date.month &&
-          event.startDate.day === day.date.day
-        );
-      });
-    });
-    
-    setCalendarData(data);
+    try {
+      // استفاده از static method
+      const data = CalendarGenerator.generateMonth(currentYear, currentMonth, events);
+      setCalendarData(data);
+    } catch (error) {
+      console.error('Error generating calendar:', error);
+    }
   }, [currentYear, currentMonth, events]);
 
   const handlePrevMonth = useCallback(() => {
@@ -72,30 +64,26 @@ const MainCalendar: React.FC<MainCalendarProps> = ({
   }, []);
 
   const handleDayClick = useCallback((day: CalendarDay) => {
-    setSelectedDate(day.date);
+    setSelectedDate(day.persianDate);
     onDayClick(day);
   }, [onDayClick]);
 
   // Get today's events
-  const todayEvents = events.filter(event => 
-    event.startDate.year === today.year &&
-    event.startDate.month === today.month &&
-    event.startDate.day === today.day
-  );
+  const todayEvents = events.filter(event => {
+    const eventPersianDate = gregorianToPersian(event.startTime);
+    return eventPersianDate.year === today.year &&
+           eventPersianDate.month === today.month &&
+           eventPersianDate.day === today.day;
+  });
 
   // Get upcoming events (next 7 days)
   const upcomingEvents = events.filter(event => {
-    const eventDate = new Date(
-      event.startDate.year + '-' + 
-      event.startDate.month.toString().padStart(2, '0') + '-' + 
-      event.startDate.day.toString().padStart(2, '0')
-    );
     const now = new Date();
     const weekFromNow = new Date();
     weekFromNow.setDate(now.getDate() + 7);
     
-    return eventDate > now && eventDate <= weekFromNow;
-  }).slice(0, 10); // محدود به 10 رویداد
+    return event.startTime > now && event.startTime <= weekFromNow;
+  }).slice(0, 10);
 
   if (!calendarData) {
     return (
@@ -121,7 +109,7 @@ const MainCalendar: React.FC<MainCalendarProps> = ({
       
       <div className="flex-1 flex overflow-hidden">
         <CalendarGrid
-          calendarData={calendarData}
+          month={calendarData}
           onDayClick={handleDayClick}
           onEventClick={onEventClick}
         />
