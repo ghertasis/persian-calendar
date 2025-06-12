@@ -149,4 +149,16 @@ export class CalendarGenerator {
   static getMonthEvents(year: number, month: number, allEvents: CalendarEvent[]): CalendarEvent[] {
     return allEvents.filter(event => {
       const eventPersianDate = gregorianToPersian(event.startTime);
-      return eventPersianDate.year === year && eventPersianDate.
+      return eventPersianDate.year === year && eventPersianDate.month === month;
+    });
+  }
+  
+  static getDayEvents(persianDate: PersianDate, allEvents: CalendarEvent[]): CalendarEvent[] {
+    return allEvents.filter(event => {
+      const eventPersianDate = gregorianToPersian(event.startTime);
+      return eventPersianDate.year === persianDate.year &&
+             eventPersianDate.month === persianDate.month &&
+             eventPersianDate.day === persianDate.day;
+    });
+  }
+}
