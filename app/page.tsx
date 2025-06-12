@@ -1,13 +1,14 @@
-import PersianCalendar from '@/components/PersianCalendar'
+import PersianCalendarWithEvents from '../components/PersianCalendarWithEvents';
 
 export default function Home() {
   return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h1>� تقویم فارسی هیبرید</h1>
-      <p>✅ برنامه با موفقیت بارگذاری شد!</p>
-      <div style={{ marginTop: '30px' }}>
-        <PersianCalendar />
+    <main className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-8 text-gray-800" dir="rtl">
+          📅 تقویم شمسی با رویدادهای Google
+        </h1>
+        <PersianCalendarWithEvents />
       </div>
-    </div>
-  )
+    </main>
+  );
 }

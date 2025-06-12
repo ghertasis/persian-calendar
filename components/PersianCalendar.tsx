@@ -1,303 +1,271 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import moment from 'moment-jalaali'
+import React, { useState, useEffect } from 'react';
+import moment from 'moment-jalaali';
+import { useGoogleEvents, groupEventsByDate } from '../hooks/useGoogleEvents';
 
-const PersianCalendar = () => {
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedDay, setSelectedDay] = useState<number | null>(null)
+moment.loadPersian();
 
-  // گرفتن تاریخ شمسی امروز
-  const getTodayPersian = () => {
-    const today = moment()
-    return {
-      year: today.jYear(),
-      month: today.jMonth(), // 0-based index
-      day: today.jDate()
-    }
-  }
+interface GoogleEvent {
+  id: string;
+  summary: string;
+  start: {
+    date?: string;
+    dateTime?: string;
+  };
+  end: {
+    date?: string; 
+    dateTime?: string;
+  };
+  description?: string;
+  location?: string;
+}
 
-  const [currentMonth, setCurrentMonth] = useState(() => getTodayPersian().year)
-  const [currentMonthIndex, setCurrentMonthIndex] = useState(() => getTodayPersian().month)
+const PersianCalendarWithEvents: React.FC = () => {
+  const [currentMonth, setCurrentMonth] = useState<number>(moment().jMonth());
+  const [currentYear, setCurrentYear] = useState<number>(moment().jYear());
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [showEventModal, setShowEventModal] = useState(false);
 
-  const persianMonths = [
+  // دریافت رویدادها از Google
+  const { events, loading, error } = useGoogleEvents(currentMonth, currentYear);
+  const groupedEvents = groupEventsByDate(events);
+
+  const persianMonthNames = [
     'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
     'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
-  ]
+  ];
 
-  const persianWeekDays = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']
+  const persianWeekDays = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'];
 
-  // تابع برای گرفتن تعداد روزهای ماه - روش صحیح
-  const getDaysInMonth = (year: number, month: number) => {
-    // روش صحیح: ساخت آخرین روز ماه و گرفتن روز آن
-    const lastDayOfMonth = moment().jYear(year).jMonth(month + 1).jDate(0)
-    return lastDayOfMonth.jDate()
-  }
+  const getDaysInMonth = (year: number, month: number): number => {
+    return moment().jYear(year).jMonth(month + 1).jDate(0).jDate();
+  };
 
-  // تابع برای محاسبه روز شروع ماه
-  const getFirstDayOfMonth = (year: number, month: number) => {
-    // ساخت تاریخ اول ماه با moment-jalaali
-    const firstDay = moment().jYear(year).jMonth(month).jDate(1)
-    
-    // گرفتن روز هفته از تاریخ میلادی
-    const dayOfWeek = firstDay.day() // 0=یکشنبه, 1=دوشنبه, ..., 6=شنبه
-    
-    // تبدیل به نظام تقویم فارسی (0=شنبه, 1=یکشنبه, ...)
-    return (dayOfWeek + 1) % 7
-  }
+  const getFirstDayOfMonth = (year: number, month: number): number => {
+    const firstDay = moment().jYear(year).jMonth(month).jDate(1);
+    return firstDay.day();
+  };
 
-  // تولید روزهای ماه
-  const generateCalendarDays = () => {
-    const daysInMonth = getDaysInMonth(currentMonth, currentMonthIndex)
-    const firstDay = getFirstDayOfMonth(currentMonth, currentMonthIndex)
-    const days = []
-    
-    // روزهای خالی اول ماه
-    for (let i = 0; i < firstDay; i++) {
-      days.push(null)
+  const isToday = (day: number | null): boolean => {
+    if (day === null) return false;
+    const today = moment();
+    return (
+      day === today.jDate() &&
+      currentMonth === today.jMonth() &&
+      currentYear === today.jYear()
+    );
+  };
+
+  // تبدیل تاریخ شمسی به میلادی برای چک کردن رویدادها
+  const getGregorianDate = (day: number): string => {
+    const persianDate = moment().jYear(currentYear).jMonth(currentMonth).jDate(day);
+    return persianDate.format('YYYY-MM-DD');
+  };
+
+  // گرفتن رویدادهای یک روز خاص
+  const getDayEvents = (day: number): GoogleEvent[] => {
+    const gregorianDate = getGregorianDate(day);
+    return groupedEvents[gregorianDate] || [];
+  };
+
+  const goToPreviousMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
     }
+  };
 
+  const goToNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  const goToToday = () => {
+    const today = moment();
+    setCurrentMonth(today.jMonth());
+    setCurrentYear(today.jYear());
+  };
+
+  const handleDayClick = (day: number) => {
+    setSelectedDay(day);
+    const dayEvents = getDayEvents(day);
+    if (dayEvents.length > 0) {
+      setShowEventModal(true);
+    }
+  };
+
+  const renderCalendarDays = () => {
+    const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+    const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
+    const startDay = (firstDay + 1) % 7;
+
+    const days: (number | null)[] = [];
+    
+    // روزهای خالی ابتدای ماه
+    for (let i = 0; i < startDay; i++) {
+      days.push(null);
+    }
+    
     // روزهای ماه
     for (let day = 1; day <= daysInMonth; day++) {
-      days.push(day)
+      days.push(day);
     }
 
-    return days
-  }
-
-  const nextMonth = () => {
-    if (currentMonthIndex === 11) {
-      setCurrentMonth(currentMonth + 1)
-      setCurrentMonthIndex(0)
-    } else {
-      setCurrentMonthIndex(currentMonthIndex + 1)
-    }
-    setSelectedDay(null)
-  }
-
-  const prevMonth = () => {
-    if (currentMonthIndex === 0) {
-      setCurrentMonth(currentMonth - 1)
-      setCurrentMonthIndex(11)
-    } else {
-      setCurrentMonthIndex(currentMonthIndex - 1)
-    }
-    setSelectedDay(null)
-  }
-
-  // برگشت به ماه جاری
-  const goToToday = () => {
-    const today = getTodayPersian()
-    setCurrentMonth(today.year)
-    setCurrentMonthIndex(today.month)
-    setSelectedDay(today.day)
-  }
-
-  // بررسی اینکه آیا روز انتخاب شده امروز است
-  const isToday = (day: number | null): boolean => {
-    if (!day) return false
-    const today = getTodayPersian()
-    return (
-      day === today.day &&
-      currentMonthIndex === today.month &&
-      currentMonth === today.year
-    )
-  }
-
-  const calendarDays = generateCalendarDays()
+    return days.map((day, index) => {
+      const dayEvents = day ? getDayEvents(day) : [];
+      const hasEvents = dayEvents.length > 0;
+      
+      return (
+        <div
+          key={index}
+          className={`
+            h-20 border border-gray-200 flex flex-col items-center justify-center
+            relative cursor-pointer transition-colors duration-200
+            ${day === null ? 'text-gray-300' : 'text-gray-800 hover:bg-blue-50'}
+            ${isToday(day) ? 'bg-blue-500 text-white font-bold' : ''}
+            ${selectedDay === day ? 'ring-2 ring-blue-400' : ''}
+          `}
+          onClick={() => day && handleDayClick(day)}
+        >
+          {day && (
+            <>
+              <span className="text-lg">{day}</span>
+              {hasEvents && (
+                <div className="flex gap-1 mt-1">
+                  {dayEvents.slice(0, 3).map((_, eventIndex) => (
+                    <div
+                      key={eventIndex}
+                      className="w-2 h-2 bg-green-500 rounded-full"
+                    />
+                  ))}
+                  {dayEvents.length > 3 && (
+                    <span className="text-xs text-gray-600">+{dayEvents.length - 3}</span>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      );
+    });
+  };
 
   return (
-    <div style={{
-      border: '2px solid #2196F3',
-      borderRadius: '15px',
-      padding: '20px',
-      backgroundColor: '#fff',
-      maxWidth: '500px',
-      margin: '0 auto',
-      boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
-    }}>
-      {/* هدر تقویم */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px',
-        backgroundColor: '#1976D2',
-        color: 'white',
-        padding: '15px',
-        borderRadius: '10px'
-      }}>
-        <button 
-          onClick={prevMonth}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '20px',
-            cursor: 'pointer',
-            padding: '5px 10px',
-            borderRadius: '5px'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg" dir="rtl">
+      {/* هدر */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={goToPreviousMonth}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
-          ◀
+          ماه قبل
         </button>
         
-        <div style={{ textAlign: 'center' }}>
-          <h3 style={{ margin: '0 0 5px 0', fontSize: '18px' }}>
-            {persianMonths[currentMonthIndex]} {currentMonth}
-          </h3>
-          <button 
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800">
+            {persianMonthNames[currentMonth]} {currentYear}
+          </h2>
+          <button
             onClick={goToToday}
-            style={{
-              background: 'rgba(255,255,255,0.2)',
-              border: 'none',
-              color: 'white',
-              fontSize: '12px',
-              cursor: 'pointer',
-              padding: '3px 8px',
-              borderRadius: '10px'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.3)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+            className="mt-2 px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
           >
-            امروز
+            برو به امروز
           </button>
         </div>
         
-        <button 
-          onClick={nextMonth}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '20px',
-            cursor: 'pointer',
-            padding: '5px 10px',
-            borderRadius: '5px'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+        <button
+          onClick={goToNextMonth}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
         >
-          ▶
+          ماه بعد
         </button>
       </div>
 
+      {/* نمایش وضعیت رویدادها */}
+      {loading && (
+        <div className="text-center text-blue-600 mb-4">
+          🔄 در حال بارگذاری رویدادها...
+        </div>
+      )}
+      
+      {error && (
+        <div className="text-center text-red-600 mb-4 bg-red-50 p-3 rounded">
+          ❌ خطا: {error}
+        </div>
+      )}
+
+      {!loading && events.length > 0 && (
+        <div className="text-center text-green-600 mb-4">
+          ✅ {events.length} رویداد یافت شد
+        </div>
+      )}
+
       {/* روزهای هفته */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, 1fr)',
-        gap: '5px',
-        marginBottom: '10px'
-      }}>
+      <div className="grid grid-cols-7 gap-1 mb-2">
         {persianWeekDays.map((day, index) => (
           <div
             key={index}
-            style={{
-              textAlign: 'center',
-              fontWeight: 'bold',
-              padding: '10px',
-              backgroundColor: '#E3F2FD',
-              borderRadius: '5px',
-              color: '#1976D2'
-            }}
+            className="h-12 flex items-center justify-center font-bold text-gray-600 bg-gray-100"
           >
             {day}
           </div>
         ))}
       </div>
 
-      {/* روزهای ماه */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, 1fr)',
-        gap: '5px'
-      }}>
-        {calendarDays.map((day, index) => (
-          <div
-            key={index}
-            onClick={() => day && setSelectedDay(day)}
-            style={{
-              textAlign: 'center',
-              padding: '12px',
-              borderRadius: '8px',
-              cursor: day ? 'pointer' : 'default',
-              backgroundColor: day 
-                ? (selectedDay === day ? '#4CAF50' 
-                   : isToday(day) ? '#FF9800'
-                   : '#f5f5f5')
-                : 'transparent',
-              color: day
-                ? (selectedDay === day || isToday(day) ? 'white' : '#333')
-                : 'transparent',
-              border: day ? '1px solid #ddd' : 'none',
-              fontSize: '14px',
-              fontWeight: isToday(day) ? 'bold' : 'normal',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              if (day && selectedDay !== day && !isToday(day)) {
-                e.currentTarget.style.backgroundColor = '#E8F5E8'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (day && selectedDay !== day && !isToday(day)) {
-                e.currentTarget.style.backgroundColor = '#f5f5f5'
-              }
-            }}
-          >
-            {day || ''}
-          </div>
-        ))}
+      {/* روزهای تقویم */}
+      <div className="grid grid-cols-7 gap-1">
+        {renderCalendarDays()}
       </div>
 
-      {/* اطلاعات روز انتخاب شده */}
-      {selectedDay && (
-        <div style={{
-          marginTop: '20px',
-          padding: '15px',
-          backgroundColor: '#E8F5E8',
-          borderRadius: '10px',
-          textAlign: 'center',
-          border: '2px solid #4CAF50'
-        }}>
-          <strong>📅 روز انتخاب شده:</strong>
-          <br />
-          {selectedDay} {persianMonths[currentMonthIndex]} {currentMonth}
+      {/* مودال رویدادها */}
+      {showEventModal && selectedDay && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-96 overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">
+                رویدادهای {selectedDay} {persianMonthNames[currentMonth]}
+              </h3>
+              <button
+                onClick={() => setShowEventModal(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              {getDayEvents(selectedDay).map((event) => (
+                <div key={event.id} className="border-l-4 border-blue-500 pl-4 py-2">
+                  <h4 className="font-semibold text-gray-800">{event.summary}</h4>
+                  {event.start.dateTime && (
+                    <p className="text-sm text-gray-600">
+                      🕐 {new Date(event.start.dateTime).toLocaleTimeString('fa-IR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                  )}
+                  {event.location && (
+                    <p className="text-sm text-gray-600">📍 {event.location}</p>
+                  )}
+                  {event.description && (
+                    <p className="text-sm text-gray-700 mt-1">{event.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
-
-      {/* تاریخ امروز با moment-jalaali */}
-      <div style={{
-        marginTop: '15px',
-        padding: '10px',
-        backgroundColor: '#FFF3E0',
-        borderRadius: '8px',
-        textAlign: 'center',
-        fontSize: '14px',
-        color: '#E65100',
-        border: '1px solid #FFB74D'
-      }}>
-        🕐 امروز: {moment().format('jYYYY/jMM/jDD')} - {moment().format('dddd')}
-      </div>
-
-      {/* Debug info */}
-      <div style={{
-        marginTop: '10px',
-        padding: '8px',
-        backgroundColor: '#f0f0f0',
-        borderRadius: '5px',
-        fontSize: '12px',
-        color: '#666'
-      }}>
-        🔍 Debug: ماه جاری: {persianMonths[currentMonthIndex]} {currentMonth} | 
-        اول ماه: روز {getFirstDayOfMonth(currentMonth, currentMonthIndex)} 
-        ({persianWeekDays[getFirstDayOfMonth(currentMonth, currentMonthIndex)]}) |
-        تعداد روز: {getDaysInMonth(currentMonth, currentMonthIndex)}
-      </div>
     </div>
-  )
-}
+  );
+};
 
-export default PersianCalendar
+export default PersianCalendarWithEvents;
