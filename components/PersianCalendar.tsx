@@ -25,11 +25,13 @@ const useGoogleEvents = (month?: number, year?: number) => {
   const [events, setEvents] = useState<GoogleEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
       setError(null);
+      setDebugInfo('🔄 شروع دریافت رویدادها...');
       
       // محاسبه بازه زمانی برای ماه مورد نظر
       const timeMin = year && month !== undefined 
@@ -40,16 +42,27 @@ const useGoogleEvents = (month?: number, year?: number) => {
         ? new Date(year, month + 1, 0).toISOString()
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      const response = await fetch(`/api/calendars?timeMin=${timeMin}&timeMax=${timeMax}`);
+      const apiUrl = `/api/calendars?timeMin=${timeMin}&timeMax=${timeMax}`;
+      setDebugInfo(`📡 درخواست به: ${apiUrl}`);
+
+      const response = await fetch(apiUrl);
+      
+      setDebugInfo(`📊 وضعیت پاسخ: ${response.status} ${response.statusText}`);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch events');
+        // بیا ببینیم دقیقاً چه خطایی برمی‌گردونه
+        const errorText = await response.text();
+        setDebugInfo(`❌ متن خطا: ${errorText}`);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
       const data = await response.json();
+      setDebugInfo(`✅ داده دریافت شد: ${JSON.stringify(data, null, 2).substring(0, 200)}...`);
       setEvents(data.events || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در دریافت رویدادها');
+      const errorMessage = err instanceof Error ? err.message : 'خطا در دریافت رویدادها';
+      setError(errorMessage);
+      setDebugInfo(`💥 خطای نهایی: ${errorMessage}`);
       console.error('Error fetching Google events:', err);
     } finally {
       setLoading(false);
@@ -64,6 +77,7 @@ const useGoogleEvents = (month?: number, year?: number) => {
     events,
     loading,
     error,
+    debugInfo,
     refetch: fetchEvents
   };
 };
@@ -90,9 +104,10 @@ const PersianCalendar: React.FC = () => {
   const [currentYear, setCurrentYear] = useState<number>(moment().jYear());
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
 
   // دریافت رویدادها از Google
-  const { events, loading, error } = useGoogleEvents(currentMonth, currentYear);
+  const { events, loading, error, debugInfo } = useGoogleEvents(currentMonth, currentYear);
   const groupedEvents = groupEventsByDate(events);
 
   const persianMonthNames = [
@@ -261,15 +276,42 @@ const PersianCalendar: React.FC = () => {
       
       {error && (
         <div className="text-center text-red-600 mb-4 bg-red-50 p-3 rounded">
-          ❌ خطا: {error}
+          <div>❌ خطا: {error}</div>
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className="mt-2 px-2 py-1 text-xs bg-red-200 rounded hover:bg-red-300"
+          >
+            {showDebug ? 'مخفی کردن' : 'نمایش'} جزئیات خطا
+          </button>
+          {showDebug && (
+            <div className="mt-2 p-2 bg-gray-100 rounded text-left text-xs overflow-auto max-h-32">
+              <pre>{debugInfo}</pre>
+            </div>
+          )}
         </div>
       )}
 
-      {!loading && events.length > 0 && (
+      {!loading && !error && events.length > 0 && (
         <div className="text-center text-green-600 mb-4">
           ✅ {events.length} رویداد یافت شد
         </div>
       )}
+
+      {!loading && !error && events.length === 0 && (
+        <div className="text-center text-gray-600 mb-4">
+          📅 رویدادی برای این ماه یافت نشد
+        </div>
+      )}
+
+      {/* دکمه تست API */}
+      <div className="text-center mb-4">
+        <button
+          onClick={() => window.open('/api/calendars', '_blank')}
+          className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors text-sm"
+        >
+          🔗 تست مستقیم API
+        </button>
+      </div>
 
       {/* روزهای هفته */}
       <div className="grid grid-cols-7 gap-1 mb-2">
